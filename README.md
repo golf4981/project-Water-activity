@@ -1,91 +1,99 @@
 Project Water Activity Meter
 
-เครื่องวัดค่า Water Activity (aw) ด้วย ESP32 โดยใช้ความชื้นสัมพัทธ์ (%RH) และอุณหภูมิของตัวอย่างเพื่อประเมินสภาวะสมดุลของตัวอย่าง พร้อมระบบควบคุมอุณหภูมิด้วยชุดเทลเทียร์, จอ TFT/LCD, ไฟสถานะ RGB และ Web Dashboard ผ่าน Wi‑Fi Access Point ที่ปล่อยจากตัวเครื่อง
+An ESP32-based Water Activity (aw) Meter that estimates water activity from relative humidity (%RH) and sample temperature. The system includes thermoelectric temperature control, TFT and LCD displays, RGB status indication, local push-button control, and a Wi-Fi Access Point with an integrated Web Dashboard.
 
 
-โค้ดหลัก: 3310.inoโปรเจกต์นี้เหมาะสำหรับงานทดลองและงานพัฒนาต้นแบบ ค่าที่ได้ควรตรวจสอบเทียบกับเครื่องมืออ้างอิงก่อนนำไปใช้เป็นผลวัดทางการหรือใช้ตัดสินคุณภาพผลิตภัณฑ์
+Main firmware: 3310.inoThis project is intended for experimental and prototype applications. Measurements should be verified against a suitable reference instrument before being used for official reporting, regulatory compliance, or product-release decisions.
 
-ความสามารถหลัก
-
-•
-วัดค่า aw จากค่า %RH ของเซนเซอร์ความชื้น
+Features
 
 •
-รองรับเซนเซอร์ความชื้นหลัก SHT45 ผ่าน I2C
+Measures water activity (aw) from relative humidity
 
 •
-รองรับ DHT22/DHT11 เป็นเซนเซอร์สำรอง โดยระบบตรวจจับตอนบูต
+Supports the following humidity sensors:
 
 •
-อ่านอุณหภูมิตัวอย่างด้วย DS18B20 ผ่าน 1‑Wire
+SHT45 over I2C as the primary sensor
 
 •
-ควบคุมชุดเทลเทียร์และพัดลมด้วย PWM เพื่อรักษาอุณหภูมิเป้าหมาย
-
-•
-ควบคุมอุณหภูมิด้วย PID และมีระบบ PID Auto-Tune
-
-•
-แสดงผลผ่านจอ TFT และ LCD 16x2 I2C
-
-•
-เมนูบนตัวเครื่องสำหรับ
-
-•
-วัดค่า aw ปกติ
-
-•
-Predict ค่าจุดสมดุลล่วงหน้า
-
-•
-Compare ตัวอย่าง A/B
-
-•
-ดูประวัติการวัด
-
-•
-ดูข้อมูล Wi‑Fi
-
-•
-ดู System Health
+DHT22/DHT11 over a single-wire GPIO connection as a fallback sensor
 
 
 
 •
-ไฟ RGB แสดงสถานะความนิ่งของการวัด
+Measures sample temperature using a DS18B20 over the 1-Wire bus
 
 •
-แดง: ค่ายังเคลื่อนที่
+Controls a thermoelectric cooler and fan using PWM
 
 •
-เหลือง: ค่าเริ่มคงที่
+Maintains the target temperature using PID control
 
 •
-เขียว: ค่านิ่งและพร้อมบันทึกผล
+Provides PID Auto-Tune functionality
+
+•
+Displays measurement data on a TFT display and a 16x2 I2C LCD
+
+•
+Provides a local menu system for:
+
+•
+Standard aw measurement
+
+•
+Equilibrium aw prediction
+
+•
+A/B sample comparison
+
+•
+Measurement-record management
+
+•
+Wi-Fi information
+
+•
+System health information
 
 
 
 •
-สร้างกราฟและส่งออกข้อมูลจาก Web Dashboard
+Uses an RGB LED to indicate measurement stability:
 
 •
-แสดง QR Code สำหรับเชื่อมต่อ Wi‑Fi บนหน้าจอ
+Red: measurement is still changing
 
 •
-ระบบตรวจจับและกู้คืน I2C เมื่อบัสค้างหรือเซนเซอร์ไม่ตอบสนอง
+Yellow: measurement is becoming stable
 
 •
-ระบบป้องกันค่าผิดปกติจาก DS18B20 เช่น ค่า 85 °C และค่ากระโดด
+Green: measurement is stable and may be saved
+
+
 
 •
-บันทึกค่าตั้งค่าและข้อมูลบางส่วนลงใน NVS ของ ESP32
+Provides graphs and data export through the Web Dashboard
 
 •
-มีโหมด RAW และโหมด CALIBRATED
+Displays a QR code for Wi-Fi connection
 
-โหมดการคำนวณ aw
+•
+Includes I2C bus recovery and sensor fault handling
 
-ตั้งค่าที่บรรทัดนี้ใน 3310.ino:
+•
+Rejects invalid DS18B20 readings, including the 85 °C startup value and abnormal temperature spikes
+
+•
+Stores selected settings and operating data in ESP32 NVS
+
+•
+Supports RAW and CALIBRATED aw calculation modes
+
+aw Calculation Modes
+
+The calculation mode is selected in 3310.ino:
 
 C++
 
@@ -94,98 +102,98 @@ C++
 
 
 
-ค่า
-โหมด
-รายละเอียด
+Value
+Mode
+Description
 0
 CALIBRATED
-ใช้ตารางคาลิเบรตแบบ piecewise-linear และการชดเชยอุณหภูมิ
+Uses the piecewise-linear calibration table and temperature compensation
 1
 RAW
-คำนวณ aw = %RH / 100 โดยตรง ไม่ผ่านตารางคาลิเบรต
+Calculates aw = %RH / 100 directly without applying the calibration table
 
 
 
 
-โหมด RAW เหมาะสำหรับตรวจสอบค่าดิบหรือเปรียบเทียบกับเฟิร์มแวร์อีกเวอร์ชัน ส่วนโหมด CALIBRATED เหมาะสำหรับใช้งานหลังสร้างตารางคาลิเบรตกับเครื่องอ้างอิงแล้ว
+The RAW mode is intended for raw-sensor evaluation and comparison with another firmware version. The CALIBRATED mode should be used only after the instrument has been calibrated against an appropriate reference.
 
-ฮาร์ดแวร์และการต่อสาย
+Hardware and Wiring
 
-อุปกรณ์
-ขาอุปกรณ์
-GPIO ESP32
-หมายเหตุ
+Device
+Device Pin
+ESP32 GPIO
+Notes
 SHT45
 SDA
 GPIO21
-ใช้บัส I2C ร่วมกับ LCD
+Shares the I2C bus with the LCD
 SHT45
 SCL
 GPIO22
-Address ที่ตรวจสอบคือ 0x44 และ 0x45
-LCD 16x2 I2C
+The firmware checks I2C addresses 0x44 and 0x45
+16x2 I2C LCD
 SDA/SCL
 GPIO21/GPIO22
-ค่าเริ่มต้น address ในโค้ดคือ 0x27
+The default address in the firmware is 0x27
 DHT22/DHT11
 DATA
 GPIO15
-เซนเซอร์สำรอง เลือกชนิดที่ DHT_TYPE
+Fallback humidity sensor; select the sensor type using DHT_TYPE
 DS18B20
 DQ
 GPIO13
-ควรมีตัวต้านทาน pull-up 4.7 kΩ ระหว่าง DQ กับ 3.3 V
-ปุ่ม UP
-กดลง GND
+A 4.7 kΩ pull-up resistor is recommended between DQ and 3.3 V
+UP button
+Switch to GND
 GPIO32
-ใช้ INPUT_PULLUP
-ปุ่ม DOWN
-กดลง GND
+Configured with INPUT_PULLUP
+DOWN button
+Switch to GND
 GPIO33
-ใช้ INPUT_PULLUP
-RGB LED KY-016
+Configured with INPUT_PULLUP
+KY-016 RGB LED
 Red
 GPIO25
-ตรวจสอบชนิด common cathode/anode ให้ตรงกับวงจร
-RGB LED KY-016
+Confirm whether the module is common-cathode or common-anode
+KY-016 RGB LED
 Green
 GPIO26
 
 
-RGB LED KY-016
+KY-016 RGB LED
 Blue
 GPIO27
 
 
-โมดูล RB046
+RB046 driver module
 TRIG/PWM
 GPIO17
-ควบคุมเทลเทียร์และพัดลมพร้อมกัน
-โมดูล RB046
+Controls the thermoelectric cooler and fan together
+RB046 driver module
 GND
 GND
-ต้องใช้กราวด์ร่วมกับ ESP32
+Must share a common ground with the ESP32
 
 
 
 
-หมายเหตุด้านไฟเลี้ยง
-
-•
-เทลเทียร์และพัดลมควรใช้แหล่งจ่ายไฟที่เหมาะสมและแยกจากไฟเลี้ยง 3.3 V ของ ESP32
+Power Supply Requirements
 
 •
-ต้องต่อ GND ร่วมกัน ระหว่าง ESP32, โมดูลขับ และเซนเซอร์ที่เกี่ยวข้อง
+The thermoelectric cooler and fan should be powered by a suitable external supply; they must not be powered directly from the ESP32 3.3 V rail.
 
 •
-โหลดเทลเทียร์กินกระแสสูง ควรใช้แหล่งจ่ายที่มีกระแสเพียงพอและมีการระบายความร้อน
+The ESP32, sensors, and driver module must share a correct common ground.
 
 •
-หาก ESP32 รีเซตตอนเริ่ม Wi‑Fi หรือเริ่มเทลเทียร์ ให้ตรวจสอบแหล่งจ่าย, สายกราวด์ และกระแสกระชากก่อนปรับซอฟต์แวร์
+The power supply must support the current required by the thermoelectric cooler and fan, including startup transients.
 
-ไลบรารีที่ต้องติดตั้ง
+•
+If the ESP32 resets when Wi-Fi or the thermoelectric cooler is enabled, inspect the power supply, ground wiring, and transient current before changing firmware parameters.
 
-ติดตั้งผ่าน Arduino IDE Library Manager ตามรายการต่อไปนี้:
+Required Libraries
+
+Install the following libraries through the Arduino IDE Library Manager:
 
 •
 TFT_eSPI
@@ -205,7 +213,7 @@ OneWire
 •
 DallasTemperature
 
-ไลบรารีที่มากับ ESP32 Core หรือ Arduino ได้แก่:
+The following components are provided by the ESP32 Arduino core or standard Arduino environment:
 
 •
 WiFi.h
@@ -231,9 +239,9 @@ esp_system.h
 •
 esp_wifi.h
 
-qrcodegen
+qrcodegen Files
 
-ไฟล์ต่อไปนี้ต้องอยู่ในโฟลเดอร์เดียวกับ 3310.ino:
+The following files must be placed in the same sketch directory as 3310.ino:
 
 Plain Text
 
@@ -243,23 +251,23 @@ qrcodegen.h
 
 
 
-ไฟล์มาจากโครงการ 
+These files are from 
 
-QR-Code-generator ของ Nayuki โดยใช้ส่วน C และไม่ต้องติดตั้งผ่าน Library Manager
+Nayuki's QR-Code-generator project. Use the C implementation. The files do not need to be installed through the Arduino IDE Library Manager.
 
-การตั้งค่า Arduino IDE
+Arduino IDE Configuration
 
 1.
-ติดตั้ง Arduino IDE และเพิ่มบอร์ด ESP32 จาก Espressif Systems
+Install the Arduino IDE and add the ESP32 board package provided by Espressif Systems.
 
 2.
-เลือกบอร์ด ESP32 ให้ตรงกับบอร์ดที่ใช้งาน เช่น ESP32 Dev Module
+Select the ESP32 board corresponding to the hardware in use, for example ESP32 Dev Module.
 
 3.
-ตั้งค่า TFT_eSPI ให้ตรงกับจอ TFT ในไฟล์ User_Setup.h หรือไฟล์ setup ที่เลือกใช้งาน
+Configure TFT_eSPI to match the installed TFT display by editing User_Setup.h or the selected TFT_eSPI setup file.
 
 4.
-สร้างโฟลเดอร์สเก็ตช์ชื่อเดียวกับไฟล์หลัก เช่น
+Create a sketch directory containing the following files:
 
 Plain Text
 
@@ -274,10 +282,10 @@ Plain Text
 
 
 5.
-เปิด 3310.ino ใน Arduino IDE
+Open 3310.ino in the Arduino IDE.
 
 6.
-ตรวจสอบค่าตั้งต้นที่ควรแก้ก่อนอัปโหลด:
+Review the following settings before uploading:
 
 •
 AW_RAW_MODE
@@ -297,17 +305,17 @@ TARGET_TEMP_C
 
 
 7.
-เลือกพอร์ตของ ESP32
+Select the ESP32 serial port.
 
 8.
-กด Verify เพื่อตรวจสอบการคอมไพล์
+Click Verify to compile the firmware.
 
 9.
-กด Upload เพื่ออัปโหลดลงบอร์ด
+Click Upload to upload the firmware to the board.
 
-การตั้งค่า Wi‑Fi และเข้า Web Dashboard
+Wi-Fi and Web Dashboard
 
-เมื่อบูตสำเร็จ ESP32 จะปล่อย Wi‑Fi Access Point ตามค่าที่กำหนดในโค้ด:
+After startup, the ESP32 creates a Wi-Fi Access Point using the following settings in the firmware:
 
 C++
 
@@ -317,16 +325,16 @@ char wifiPassword[13] = "aw12345678";
 
 
 
-ขั้นตอนการใช้งาน:
+To access the Web Dashboard:
 
 1.
-ใช้โทรศัพท์หรือคอมพิวเตอร์เชื่อมต่อ Wi‑Fi ชื่อ AW_Meter
+Connect a phone or computer to the AW_Meter Wi-Fi network.
 
 2.
-ใช้รหัสผ่านที่กำหนดใน wifiPassword
+Enter the password defined in wifiPassword.
 
 3.
-เปิดเบราว์เซอร์ไปที่:
+Open the following address in a web browser:
 
 Plain Text
 
@@ -338,23 +346,23 @@ http://192.168.4.1/
 
 
 4.
-หรือเปิดเมนู WiFi Info บนตัวเครื่องเพื่อดูข้อมูลการเชื่อมต่อและสแกน QR Code
+Alternatively, open WiFi Info on the device to view the connection information and scan the displayed QR code.
 
 
-ควรเปลี่ยนรหัสผ่านเริ่มต้นก่อนนำไปใช้งานจริง รหัสผ่าน WPA2 ต้องมีอย่างน้อย 8 ตัวอักษร
+Change the default password before deploying the device. WPA2 passwords must contain at least eight characters.
 
-วิธีใช้งานจากปุ่มบนตัวเครื่อง
-
-•
-กดปุ่ม UP/DOWN เพื่อเลื่อนรายการ
+Local User Interface
 
 •
-กดปุ่มใดปุ่มหนึ่งค้างประมาณ 500 ms เพื่อเลือกเมนู
+Press UP or DOWN to move through menu items.
 
 •
-กดปุ่ม UP และ DOWN พร้อมกัน เพื่อย้อนกลับ
+Hold either button for approximately 500 ms to select an item.
 
-เมนูหลัก:
+•
+Press UP and DOWN simultaneously to go back.
+
+The main menu contains:
 
 Plain Text
 
@@ -366,64 +374,64 @@ Plain Text
 
 
 
-ในเมนู Measure AW:
+The measurement menu contains:
 
 Plain Text
 
 
-1.1 Start     วัดค่า aw ปกติ
-1.2 Predict   ทำนายค่า aw เมื่อเข้าสู่สมดุล
-1.3 Compare   วัดและเปรียบเทียบตัวอย่าง A กับ B
-1.4 Cancel    ยกเลิกโหมดวัด
+1.1 Start     Standard aw measurement
+1.2 Predict   Equilibrium aw prediction
+1.3 Compare   A/B sample comparison
+1.4 Cancel    Cancel the current measurement mode
 
 
 
-ลำดับการวัดโดยทั่วไป
+Typical Measurement Procedure
 
 1.
-เปิดเครื่องโดยยังไม่วางตัวอย่างบนเซนเซอร์
+Power on the device without placing a sample on the sensor.
 
 2.
-รอให้ระบบตรวจจับเซนเซอร์และเก็บค่าอ้างอิงสภาพแวดล้อมตอนบูต
+Allow the system to detect the sensors and capture the ambient reference conditions during startup.
 
 3.
-วางตัวอย่างในตำแหน่งวัด
+Place the sample in the measurement position.
 
 4.
-เลือก Measure AW > Start
+Select Measure AW > Start.
 
 5.
-ระบบจะทำ sensor conditioning โดยอาจเปิดฮีตเตอร์ SHT และรอให้เซนเซอร์เย็นลง
+The firmware performs sensor conditioning. This may include activating the SHT45 heater and waiting for the sensor to cool.
 
 6.
-รอจนค่าเข้าสู่สถานะนิ่ง ไฟจะเปลี่ยนจากแดงเป็นเหลืองและเขียว
+Wait for the measurement to reach a stable condition. The RGB LED changes from red to yellow and then green as stability improves.
 
 7.
-เลือกบันทึกผลเมื่อมีหน้าต่างถามบนจอ
+Save the result when the on-screen confirmation prompt appears.
 
 8.
-หลังจบการวัด ระบบอาจเปิดฮีตเตอร์ SHT เพื่อไล่ความชื้นตกค้างก่อนกลับเมนู
+After a measurement, the firmware may activate the SHT45 heater to remove residual moisture before returning to the menu.
 
-การคาลิเบรตและชดเชยอุณหภูมิ
+Calibration and Temperature Compensation
 
-ในโหมด CALIBRATED ระบบสามารถใช้:
-
-•
-ตารางจุดคาลิเบรตแบบ piecewise-linear
+In CALIBRATED mode, the firmware can use:
 
 •
-Quick Calibration จากค่าอ้างอิงภายนอก
+A piecewise-linear calibration table
 
 •
-การชดเชยความแตกต่างระหว่างอุณหภูมิชิป SHT กับอุณหภูมิตัวอย่างจาก DS18B20
+Quick Calibration using an external reference value
 
 •
-Auto Calibration หลายรอบผ่านส่วนผู้ดูแลระบบบน Web Dashboard
+Compensation for the temperature difference between the SHT45 sensor and the sample measured by the DS18B20
 
 •
-PID Auto-Tune เพื่อช่วยหาค่า Kp, Ki, Kd
+Multi-round automatic calibration through the administrator functions in the Web Dashboard
 
-ค่าที่ควรตรวจสอบเป็นพิเศษ:
+•
+PID Auto-Tune for estimating suitable Kp, Ki, and Kd values
+
+The following parameter requires particular attention:
 
 C++
 
@@ -432,13 +440,13 @@ float SHT_MINUS_DS_OFFSET_C = 0.0f;
 
 
 
-ก่อนตั้งค่านี้ ควรวางเครื่องในห้องที่อุณหภูมิคงที่ ปิดฮีตเตอร์และเทลเทียร์ แล้วปล่อยให้เซนเซอร์ปรับตัวประมาณ 30 นาที จากนั้นดูค่า SHT-sample dT ในหน้า System Health และนำค่าที่เหมาะสมมาใช้เป็น offset
+To determine a suitable offset, place the device in a room with stable temperature, disable the heater and thermoelectric cooler, and allow the sensors to stabilize for approximately 30 minutes. Then open System Health, read the SHT-sample dT value, and use an appropriate measured offset instead of 0.0f.
 
-การแก้ปัญหาเบื้องต้น
+Troubleshooting
 
-คอมไพล์พบ state was not declared in this scope
+Compilation Error: state was not declared in this scope
 
-ตรวจสอบให้มีการประกาศล่วงหน้าก่อนฟังก์ชันที่ใช้งาน:
+Ensure that a forward declaration is placed before any function that references state:
 
 C++
 
@@ -447,7 +455,7 @@ extern AppState state;
 
 
 
-และต้องมีการนิยามตัวจริงเพียงครั้งเดียว เช่น:
+The actual variable definition must appear exactly once, for example:
 
 C++
 
@@ -456,9 +464,9 @@ AppState state = ST_BOOT_WARMUP;
 
 
 
-มีคำเตือน LiquidCrystal_I2C เรื่อง architecture
+LiquidCrystal_I2C Architecture Warning
 
-คำเตือนลักษณะนี้:
+The Arduino IDE may display a warning similar to:
 
 Plain Text
 
@@ -467,128 +475,128 @@ library LiquidCrystal_I2C claims to run on all architecture(s )
 
 
 
-โดยทั่วไปเป็นเพียงคำเตือนจาก metadata ของไลบรารี ไม่ใช่ error หากคอมไพล์ต่อได้และ LCD ทำงานถูกต้องสามารถใช้งานต่อได้ แต่ควรเลือกไลบรารี LiquidCrystal_I2C ที่รองรับ ESP32 และตรวจสอบ address ของ LCD ให้ถูกต้อง
+This is generally a library metadata warning rather than a compilation error. If compilation succeeds and the LCD operates correctly, the warning can usually be ignored. Nevertheless, use a LiquidCrystal_I2C library that is known to work with ESP32 and verify the LCD I2C address.
 
-SHT45 อ่านค่าไม่ได้
-
-•
-ตรวจสอบ SDA ที่ GPIO21 และ SCL ที่ GPIO22
+SHT45 Reading Failure
 
 •
-ตรวจสอบไฟเลี้ยงและ GND
+Verify SDA on GPIO21 and SCL on GPIO22.
 
 •
-ตรวจสอบ address 0x44 หรือ 0x45
+Verify the sensor power supply and ground connection.
 
 •
-ตรวจสอบสาย I2C ไม่ยาวหรือมีสัญญาณรบกวนจากสายเทลเทียร์
+Check I2C address 0x44 or 0x45.
 
 •
-หากใช้ DHT เป็นสำรอง ให้ตรวจสอบ DHT_PIN และ DHT_TYPE
-
-DS18B20 ขึ้น fault หรือค่า 85 °C
+Keep I2C wiring short and away from thermoelectric cooler power and PWM wiring.
 
 •
-ตรวจสอบสาย DQ ที่ GPIO13
+If using the DHT fallback sensor, verify DHT_PIN and DHT_TYPE.
+
+DS18B20 Fault or 85 °C Reading
 
 •
-ใส่ตัวต้านทาน pull-up 4.7 kΩ
+Verify the data line on GPIO13.
 
 •
-ตรวจสอบ GND และไฟเลี้ยง
+Install a 4.7 kΩ pull-up resistor.
 
 •
-แยกสายเซนเซอร์ออกจากสาย PWM/กำลังของเทลเทียร์
-
-ESP32 รีเซตเมื่อเปิด Wi‑Fi หรือเทลเทียร์
+Verify the sensor power and ground connections.
 
 •
-ใช้แหล่งจ่ายที่กระแสเพียงพอ
+Keep the sensor cable away from high-current and PWM wiring.
+
+ESP32 Resets When Wi-Fi or the Thermoelectric Cooler Starts
 
 •
-แยกไฟโหลดเทลเทียร์ออกจากไฟเลี้ยง ESP32
+Use a power supply with sufficient current capacity.
 
 •
-ต่อกราวด์ร่วมอย่างถูกต้อง
+Power the thermoelectric load separately from the ESP32 supply.
 
 •
-ตรวจสอบขั้วและสายของโมดูล RB046
+Confirm that all devices share a correct common ground.
 
 •
-ลดกำลังส่ง Wi‑Fi หากแหล่งจ่ายมีปัญหากระแสกระชาก
-
-LCD แสดงตัวอักษรเพี้ยน
+Verify the polarity and wiring of the RB046 driver module.
 
 •
-ตรวจสอบ address LCD ค่าเริ่มต้นคือ 0x27
+Reduce Wi-Fi transmit power if the power supply experiences transient voltage drops.
+
+Corrupted LCD Characters
 
 •
-ตรวจสอบสาย SDA/SCL และ GND
+Verify that the LCD address is 0x27, unless the hardware uses another address.
 
 •
-ลดความยาวสาย I2C
+Check SDA, SCL, and ground wiring.
 
 •
-ระบบมี SafeLCD, การตรวจ ACK และการกู้คืนบัส I2C ในตัว แต่ไม่สามารถแก้ปัญหาไฟเลี้ยงหรือการต่อสายผิดได้
+Reduce the I2C cable length.
 
-Web API ที่ใช้ตรวจสอบระบบ
+•
+The firmware includes SafeLCD, ACK monitoring, and I2C bus recovery; however, these functions cannot correct an incorrect wiring configuration or an inadequate power supply.
 
-Endpoint หลักที่มีในเฟิร์มแวร์:
+Web API
+
+The firmware includes the following principal endpoints:
 
 Endpoint
-รายละเอียด
+Description
 /
-หน้า Web Dashboard
+Web Dashboard
 /data
-ค่าการวัดและสถานะปัจจุบันในรูป JSON
+Current measurement data and device status in JSON format
 /info
-ข้อมูลอุปกรณ์และ metadata
+Device information and metadata
 /calpoints
-อ่านจุดคาลิเบรต
+Read the current calibration points
 /calset
-ตั้งค่าจุดคาลิเบรต
+Set calibration points
 /calreset
-คืนค่าจุดคาลิเบรตเริ่มต้น
+Restore the default calibration points
 /calquick
-คาลิเบรตแบบเร็วจากค่าอ้างอิง
+Perform Quick Calibration using a reference value
 /pidset
-ตั้งค่า PID
+Set PID parameters
 /pidautotune
-เริ่มหรือยกเลิก PID Auto-Tune
+Start or cancel PID Auto-Tune
 /pidautotune/status
-ดูสถานะ PID Auto-Tune
+Read the PID Auto-Tune status
 /adv/status
-ดูสถานะระบบ ADV
+Read the ADV module status
 /adv/set
-ตั้งค่าโมดูล ADV
+Configure the ADV module
 /clocksync
-ซิงก์เวลาจากเบราว์เซอร์
+Synchronize the device clock with the browser
 /setop
-ตั้งชื่อย่อผู้ปฏิบัติงาน
+Set the current operator identifier
 
 
 
 
-Endpoint สำหรับคาลิเบรตและฟังก์ชันผู้ดูแลระบบควรใช้เฉพาะในเครือข่ายที่เชื่อถือได้
+Calibration and administrator endpoints should only be used on a trusted network. The firmware does not provide the same security controls as a production web service.
 
-ไฟล์ในโปรเจกต์
+Project Files
 
 Plain Text
 
 
 project-Water-activity/
-├── 3310.ino       # เฟิร์มแวร์หลักสำหรับ ESP32
-├── qrcodegen.c     # ส่วนสร้าง QR Code
-├── qrcodegen.h     # Header ของ qrcodegen
-└── README.md       # คู่มือโปรเจกต์
+├── 3310.ino       # Main ESP32 firmware
+├── qrcodegen.c     # QR Code generator implementation
+├── qrcodegen.h     # QR Code generator header
+└── README.md       # Project documentation
 
 
 
-สถานะโครงการ
+Project Status
 
-โครงการอยู่ระหว่างการพัฒนาและปรับปรุงความเสถียรของการวัด, การควบคุมอุณหภูมิ และการคาลิเบรต ค่า constant และ threshold หลายรายการในโค้ดถูกเปิดไว้ให้ปรับตามเซนเซอร์ แหล่งจ่ายไฟ และสภาพแวดล้อมจริง
+This project is under active development. Measurement stability, temperature control, calibration, and fault recovery continue to be refined. Several constants and thresholds are exposed in the firmware so they can be adjusted for the specific sensors, power supply, enclosure, and operating environment.
 
 License
 
-ส่วนโค้ดของโปรเจกต์นี้ยังไม่มีการระบุ License อย่างเป็นทางการ หากต้องการเผยแพร่หรือนำไปใช้ต่อ ควรเพิ่มไฟล์ LICENSE และระบุเงื่อนไขการใช้งานให้ชัดเจน
+No formal project license has been specified at this time. If the project is redistributed or used as the basis for another project, add a LICENSE file and clearly define the applicable terms of use.
 
